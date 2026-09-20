@@ -3,6 +3,7 @@ package main
 import (
 	"car-api/internal/config"
 	"car-api/internal/database"
+	"car-api/internal/handlers"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,8 @@ func main() {
 			"database": "connected",
 		})
 	})
+
+	router.POST("/cars", handlers.CreateCarHandler(pool))
 
 	router.Run(":" + cfg.Port)
 
