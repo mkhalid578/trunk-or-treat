@@ -81,3 +81,31 @@ func GetAllCars(pool *pgxpool.Pool) ([]models.Car, error) {
 
 	return cars, nil
 }
+
+// get car by id
+func GetCarByID(pool *pgxpool.Pool, id int) (*models.Car, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel() // release of the context resources
+
+	query := `
+	SELECT id, model, make, model_year, trim, body_style, powertrain, created_at 
+	FROM cars
+	WHERE id = $1
+	`
+
+	var car models.Car
+	err := pool.QueryRow(ctx, query, id).Scan(
+		&car.ID,
+		&car.Model,
+		&car.Make,
+		&car.Year,
+		&car.Trim,
+		&car.BodyStyle,
+		&car.Powertrain,
+		&car.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &car, nil
+}
