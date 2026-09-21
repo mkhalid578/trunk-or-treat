@@ -35,6 +35,7 @@ func main() {
 	})
 
 	router.POST("/cars", handlers.CreateCarHandler(pool))
+	router.GET("/cars", handlers.GetAllCarsHandler(pool))
 
 	router.Run(":" + cfg.Port)
 

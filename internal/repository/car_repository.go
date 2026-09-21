@@ -39,3 +39,45 @@ func AddCar(pool *pgxpool.Pool,
 	}
 	return &car, nil
 }
+
+// get all cars
+func GetAllCars(pool *pgxpool.Pool) ([]models.Car, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel() // release of the context resources
+
+	query := `
+	SELECT id, model, make, model_year, trim, body_style, powertrain, created_at 
+	FROM cars
+	ORDER BY created_at DESC
+	`
+
+	rows, err := pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var cars []models.Car
+	for rows.Next() {
+		var car models.Car
+		err := rows.Scan(
+			&car.ID,
+			&car.Model,
+			&car.Make,
+			&car.Year,
+			&car.Trim,
+			&car.BodyStyle,
+			&car.Powertrain,
+			&car.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		cars = append(cars, car)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return cars, nil
+}
