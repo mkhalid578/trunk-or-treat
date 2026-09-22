@@ -80,3 +80,36 @@ func GetCarByIDHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		c.JSON(http.StatusOK, car)
 	}
 }
+
+func UpdateCarVolumeHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid car ID"})
+			return
+		}
+
+		var input struct {
+			CargoFullVolumeCuFt   float64 `json:"cargo_volume_cu_ft"`
+			CargoBehind2ndRowCuFt float64 `json:"cargo_vol_behind_2nd_row_cu_ft"`
+		}
+
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		car, err := repository.UpdateCarVolume(pool, id, input.CargoBehind2ndRowCuFt, input.CargoFullVolumeCuFt)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Car not found"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, car)
+	}
+}

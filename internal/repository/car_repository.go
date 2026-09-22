@@ -46,7 +46,10 @@ func GetAllCars(pool *pgxpool.Pool) ([]models.Car, error) {
 	defer cancel() // release of the context resources
 
 	query := `
-	SELECT id, model, make, model_year, trim, body_style, powertrain, created_at 
+	SELECT id, model, make, model_year, trim, body_style, powertrain,
+		cargo_vol_seats_folded_cu_ft,
+		cargo_vol_behind_2nd_row_cu_ft,
+		created_at
 	FROM cars
 	ORDER BY created_at DESC
 	`
@@ -68,6 +71,8 @@ func GetAllCars(pool *pgxpool.Pool) ([]models.Car, error) {
 			&car.Trim,
 			&car.BodyStyle,
 			&car.Powertrain,
+			&car.CargoFullVolumeCuFt,
+			&car.CargoBehind2ndRowCuFt,
 			&car.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -107,5 +112,32 @@ func GetCarByID(pool *pgxpool.Pool, id int) (*models.Car, error) {
 		return nil, err
 	}
 
+	return &car, nil
+}
+
+func UpdateCarVolume(pool *pgxpool.Pool,
+	id int,
+	cargoBehind2ndRowCuFt float64,
+	totalCargoVolumeCuFt float64) (*models.Car, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel() // release of the context resources
+
+	query := `
+		UPDATE cars
+		SET cargo_vol_behind_2nd_row_cu_ft = $1,
+			cargo_vol_seats_folded_cu_ft = $2
+		WHERE id = $3
+		RETURNING id, cargo_vol_behind_2nd_row_cu_ft, cargo_vol_seats_folded_cu_ft, created_at
+		`
+	var car models.Car
+	err := pool.QueryRow(ctx, query, cargoBehind2ndRowCuFt, totalCargoVolumeCuFt, id).Scan(
+		&car.ID,
+		&car.CargoBehind2ndRowCuFt,
+		&car.CargoFullVolumeCuFt,
+		&car.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return &car, nil
 }

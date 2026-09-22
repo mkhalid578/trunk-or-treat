@@ -11,11 +11,7 @@ CREATE TABLE IF NOT EXISTS cars (
     powertrain TEXT NOT NULL CHECK (powertrain IN ('gas', 'diesel', 'hybrid', 'electric', 'other')),
     
     -- Cargo volume (cubic feet)
-    cargo_vol_cu_ft NUMERIC (5,1) CHECK (cargo_vol_cu_ft >= 0),
     cargo_vol_seats_folded_cu_ft NUMERIC(5,1) CHECK (cargo_vol_seats_folded_cu_ft >= 0),
     cargo_vol_behind_2nd_row_cu_ft NUMERIC(5,1) CHECK (cargo_vol_behind_2nd_row_cu_ft >= 0),
-    frunk_vol_cu_ft NUMERIC(5,1) CHECK (frunk_vol_cu_ft >= 0),
-    fuel_capacity_gal NUMERIC(5,1) CHECK (fuel_capacity_gal >= 0),
-    fuel_economy_mpg NUMERIC(5,1) CHECK (fuel_economy_mpg >= 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

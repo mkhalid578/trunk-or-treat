@@ -12,11 +12,7 @@ type Car struct {
 	Trim                  string    `json:"trim" db:"trim"`
 	BodyStyle             string    `json:"body_style" db:"body_style"`
 	Powertrain            string    `json:"powertrain" db:"powertrain"`
-	CargoVolumeCuFt       float64   `json:"cargo_volume_cu_ft" db:"cargo_volume_cu_ft"`
-	CargoFullVolumeCuFt   float64   `json:"cargo_vol_seats_folded_cu_ft" db:"cargo_vol_seats_folded_cu_ft"`
-	CargoBehind2ndRowCuFt float64   `json:"cargo_vol_behind_2nd_row_cu_ft" db:"cargo_vol_behind_2nd_row_cu_ft"`
-	FrunkVolumeCuFt       float64   `json:"frunk_vol_cu_ft" db:"frunk_vol_cu_ft"`
-	FuelCapacityGal       float64   `json:"fuel_capacity_gal" db:"fuel_capacity_gal"`
-	FuelEconomyMpg        float64   `json:"fuel_economy_mpg" db:"fuel_economy_mpg"`
+	CargoFullVolumeCuFt   *float64  `json:"cargo_vol_seats_folded_cu_ft" db:"cargo_vol_seats_folded_cu_ft"`
+	CargoBehind2ndRowCuFt *float64  `json:"cargo_vol_behind_2nd_row_cu_ft" db:"cargo_vol_behind_2nd_row_cu_ft"`
 	CreatedAt             time.Time `json:"created_at" db:"created_at"`
 }
