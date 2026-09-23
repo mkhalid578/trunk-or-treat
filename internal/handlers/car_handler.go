@@ -19,6 +19,11 @@ type CreateCarInput struct {
 	Powertrain string `json:"powertrain" binding:"required"`
 }
 
+type UpdateCarVolume struct {
+	CargoFullVolumeCuFt   *float64 `json:"cargo_volume_cu_ft"`
+	CargoBehind2ndRowCuFt *float64 `json:"cargo_vol_behind_2nd_row_cu_ft"`
+}
+
 func CreateCarHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input CreateCarInput
@@ -90,17 +95,32 @@ func UpdateCarVolumeHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		var input struct {
-			CargoFullVolumeCuFt   float64 `json:"cargo_volume_cu_ft"`
-			CargoBehind2ndRowCuFt float64 `json:"cargo_vol_behind_2nd_row_cu_ft"`
-		}
+		var input UpdateCarVolume
 
 		if err := c.ShouldBindJSON(&input); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		car, err := repository.UpdateCarVolume(pool, id, input.CargoBehind2ndRowCuFt, input.CargoFullVolumeCuFt)
+		if input.CargoFullVolumeCuFt == nil && input.CargoBehind2ndRowCuFt == nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "At least one cargo volume value is required",
+			})
+			return
+		}
+
+		if (input.CargoFullVolumeCuFt != nil && *input.CargoFullVolumeCuFt < 0) ||
+			(input.CargoBehind2ndRowCuFt != nil && *input.CargoBehind2ndRowCuFt < 0) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cargo volume values must be non-negative"})
+			return
+		}
+
+		car, err := repository.UpdateCarVolume(
+			pool,
+			id,
+			input.CargoBehind2ndRowCuFt,
+			input.CargoFullVolumeCuFt,
+		)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Car not found"})

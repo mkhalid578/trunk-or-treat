@@ -117,15 +117,15 @@ func GetCarByID(pool *pgxpool.Pool, id int) (*models.Car, error) {
 
 func UpdateCarVolume(pool *pgxpool.Pool,
 	id int,
-	cargoBehind2ndRowCuFt float64,
-	totalCargoVolumeCuFt float64) (*models.Car, error) {
+	cargoBehind2ndRowCuFt *float64,
+	totalCargoVolumeCuFt *float64) (*models.Car, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel() // release of the context resources
 
 	query := `
 		UPDATE cars
-		SET cargo_vol_behind_2nd_row_cu_ft = $1,
-			cargo_vol_seats_folded_cu_ft = $2
+		SET cargo_vol_behind_2nd_row_cu_ft = COALESCE($1, cargo_vol_behind_2nd_row_cu_ft),
+			cargo_vol_seats_folded_cu_ft = COALESCE($2, cargo_vol_seats_folded_cu_ft)
 		WHERE id = $3
 		RETURNING id, cargo_vol_behind_2nd_row_cu_ft, cargo_vol_seats_folded_cu_ft, created_at
 		`
