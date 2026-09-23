@@ -3,6 +3,7 @@ package repository
 import (
 	"car-api/internal/models"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -140,4 +141,23 @@ func UpdateCarVolume(pool *pgxpool.Pool,
 		return nil, err
 	}
 	return &car, nil
+}
+
+func DeleteCar(pool *pgxpool.Pool, id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel() // release of the context resources
+
+	query := `
+		DELETE FROM cars
+		WHERE id = $1
+	`
+
+	command, err := pool.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	if command.RowsAffected() == 0 {
+		return fmt.Errorf("car with id %d not found", id)
+	}
+	return nil
 }

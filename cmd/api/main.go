@@ -38,6 +38,7 @@ func main() {
 	router.GET("/cars", handlers.GetAllCarsHandler(pool))
 	router.GET("/cars/:id", handlers.GetCarByIDHandler(pool))
 	router.PUT("/cars/:id", handlers.UpdateCarVolumeHandler(pool))
+	router.DELETE("/cars/:id", handlers.DeleteCarHandler(pool))
 	router.Run(":" + cfg.Port)
 
 }
