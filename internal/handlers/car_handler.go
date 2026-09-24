@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"car-api/internal/repository"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -149,6 +150,13 @@ func DeleteCarHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Car not found"})
 				return
 			}
+
+			//TODO handle status 404 not found
+			if err.Error() == fmt.Sprintf("car with id %d not found", id) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Car not found"})
+				return
+			}
+
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

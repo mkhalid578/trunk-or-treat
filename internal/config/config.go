@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	Mode        string
 	DatabaseURL string
 	Port        string
 }
@@ -24,6 +25,7 @@ func Load() (*Config, error) {
 	config := &Config{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		Port:        os.Getenv("PORT"),
+		Mode:        os.Getenv("MODE"),
 	}
 
 	return config, nil

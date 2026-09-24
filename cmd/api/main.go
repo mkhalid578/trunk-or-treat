@@ -4,34 +4,35 @@ import (
 	"car-api/internal/config"
 	"car-api/internal/database"
 	"car-api/internal/handlers"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to load configuration:", err)
+		log.Fatalf("failed to load configuration: %v", err)
 	}
 
 	pool, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal("Failed to connect to the database:", err)
+		log.Fatalf("failed to connect to the database: %v", err)
 	}
-
-	// schedule a pool clean up
-	// schedules close for the connection pool
-
 	defer pool.Close()
 
 	router := gin.Default()
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message":  "pong",
-			"database": "connected",
-		})
+	gin.SetMode(cfg.Mode)
+
+	router.SetTrustedProxies([]string{"127.0.0.1"})
+
+	router.GET("/", func(c *gin.Context) {
+		// If the client is 192.168.1.2, use the X-Forwarded-For
+		// header to deduce the original client IP from the trust-
+		// worthy parts of that header.
+		// Otherwise, simply return the direct client IP
+		fmt.Printf("ClientIP: %s\n", c.ClientIP())
 	})
 
 	router.POST("/cars", handlers.CreateCarHandler(pool))
@@ -39,6 +40,8 @@ func main() {
 	router.GET("/cars/:id", handlers.GetCarByIDHandler(pool))
 	router.PUT("/cars/:id", handlers.UpdateCarVolumeHandler(pool))
 	router.DELETE("/cars/:id", handlers.DeleteCarHandler(pool))
-	router.Run(":" + cfg.Port)
 
+	if err := router.Run(":" + cfg.Port); err != nil {
+		log.Fatalf("failed to start server: %v", err)
+	}
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,7 +33,6 @@ func Connect(databaseURL string) (*pgxpool.Pool, error) {
 	}
 
 	log.Println("Successfully connected to the database")
-	fmt.Print("Database successful")
 
 	return pool, nil
 }
