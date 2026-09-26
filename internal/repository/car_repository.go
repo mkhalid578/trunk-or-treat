@@ -161,3 +161,48 @@ func DeleteCar(pool *pgxpool.Pool, id int) error {
 	}
 	return nil
 }
+
+func UpsertCars(pool *pgxpool.Pool, cars []models.Car) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if _, err := pool.Exec(ctx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS cars_catalog_identity_idx
+		ON cars (LOWER(make), LOWER(model), model_year, LOWER(COALESCE(trim, '')))
+	`); err != nil {
+		return fmt.Errorf("ensure car catalog identity index: %w", err)
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin car catalog import transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `
+		INSERT INTO cars (make, model, model_year, trim, body_style, powertrain)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (lower(make), lower(model), model_year, lower(COALESCE(trim, ''::text)))
+		DO UPDATE SET
+			body_style = EXCLUDED.body_style,
+			powertrain = EXCLUDED.powertrain
+	`
+
+	for _, car := range cars {
+		if _, err := tx.Exec(ctx, query,
+			car.Make,
+			car.Model,
+			car.Year,
+			car.Trim,
+			car.BodyStyle,
+			car.Powertrain,
+		); err != nil {
+			return fmt.Errorf("upsert Toyota %s %s: %w", car.Model, car.Trim, err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit car catalog import transaction: %w", err)
+	}
+	return nil
+}
