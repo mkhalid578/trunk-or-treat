@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type createUserInput struct {
@@ -24,15 +25,26 @@ func CreateUserHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
+		if len(input.Password) < 6 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 6 characters long"})
+			return
+		}
+
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"Failed to hash password": err.Error()})
+			return
+		}
+
 		user := &models.User{
 			Email:    input.Email,
-			Password: input.Password,
+			Password: string(hash),
 		}
 		createdUser, err := repository.CreateUser(pool, user)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"Failed to create user": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, createdUser)
+		c.JSON(http.StatusCreated, createdUser)
 	}
 }

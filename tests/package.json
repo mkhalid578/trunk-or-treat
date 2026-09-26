@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "dependencies": {
+    "supertest": "^7.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/supertest": "^7.2.1"
+  }
+}

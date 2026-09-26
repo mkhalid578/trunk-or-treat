@@ -25,11 +25,37 @@ type UpdateCarVolume struct {
 	CargoBehind2ndRowCuFt *float64 `json:"cargo_vol_behind_2nd_row_cu_ft"`
 }
 
+var validBodyStyles = map[string]bool{
+	"sedan": true, "hatchback": true, "suv": true, "truck": true,
+	"coupe": true, "convertible": true, "wagon": true, "van": true,
+	"other": true,
+}
+
+var validPowertrains = map[string]bool{
+	"gas": true, "diesel": true, "hybrid": true, "electric": true,
+	"other": true,
+}
+
 func CreateCarHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input CreateCarInput
 		if err := c.ShouldBindJSON(&input); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if input.Year < 1980 || input.Year > 2100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "model_year must be between 1980 and 2100"})
+			return
+		}
+
+		if !validBodyStyles[input.BodyStyle] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid body_style"})
+			return
+		}
+
+		if !validPowertrains[input.Powertrain] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid powertrain"})
 			return
 		}
 

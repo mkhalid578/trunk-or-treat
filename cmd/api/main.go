@@ -34,7 +34,7 @@ func main() {
 		// Otherwise, simply return the direct client IP
 		fmt.Printf("ClientIP: %s\n", c.ClientIP())
 	})
-	router.POST("/users", handlers.CreateUserHandler(pool))
+	router.POST("/auth/register", handlers.CreateUserHandler(pool))
 
 	router.POST("/cars", handlers.CreateCarHandler(pool))
 	router.GET("/cars", handlers.GetAllCarsHandler(pool))
