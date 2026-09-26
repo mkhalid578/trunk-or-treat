@@ -10,6 +10,7 @@ type Config struct {
 	Mode        string
 	DatabaseURL string
 	Port        string
+	JWTSecret   string
 }
 
 // Load loads the configuration from environment variables or other sources. caps makes it
@@ -26,6 +27,7 @@ func Load() (*Config, error) {
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		Port:        os.Getenv("PORT"),
 		Mode:        os.Getenv("MODE"),
+		JWTSecret:   os.Getenv("JWT_SECRET"),
 	}
 
 	return config, nil

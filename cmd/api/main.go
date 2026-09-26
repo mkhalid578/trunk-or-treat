@@ -35,6 +35,7 @@ func main() {
 		fmt.Printf("ClientIP: %s\n", c.ClientIP())
 	})
 	router.POST("/auth/register", handlers.CreateUserHandler(pool))
+	router.POST("/auth/login", handlers.LoginHandler(pool, cfg))
 
 	router.POST("/cars", handlers.CreateCarHandler(pool))
 	router.GET("/cars", handlers.GetAllCarsHandler(pool))
