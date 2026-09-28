@@ -38,11 +38,11 @@ func main() {
 	router.POST("/auth/register", handlers.CreateUserHandler(pool))
 	router.POST("/auth/login", handlers.LoginHandler(pool, cfg))
 
-	router.POST("/cars", handlers.CreateCarHandler(pool))
+	router.POST("/cars", middleware.AuthMiddleware(cfg), handlers.CreateCarHandler(pool))
 	router.GET("/cars", middleware.AuthMiddleware(cfg), handlers.GetAllCarsHandler(pool))
-	router.GET("/cars/:id", handlers.GetCarByIDHandler(pool))
-	router.PUT("/cars/:id", handlers.UpdateCarVolumeHandler(pool))
-	router.DELETE("/cars/:id", handlers.DeleteCarHandler(pool))
+	router.GET("/cars/:id", middleware.AuthMiddleware(cfg), handlers.GetCarByIDHandler(pool))
+	router.PUT("/cars/:id", middleware.AuthMiddleware(cfg), handlers.UpdateCarVolumeHandler(pool))
+	router.DELETE("/cars/:id", middleware.AuthMiddleware(cfg), handlers.DeleteCarHandler(pool))
 
 	//test route
 	router.GET("/protected", middleware.AuthMiddleware(cfg), handlers.TestProtectedHandler())
