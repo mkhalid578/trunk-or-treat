@@ -4,6 +4,7 @@ import (
 	"car-api/internal/config"
 	"car-api/internal/database"
 	"car-api/internal/handlers"
+	"car-api/internal/middleware"
 	"fmt"
 	"log"
 
@@ -38,10 +39,13 @@ func main() {
 	router.POST("/auth/login", handlers.LoginHandler(pool, cfg))
 
 	router.POST("/cars", handlers.CreateCarHandler(pool))
-	router.GET("/cars", handlers.GetAllCarsHandler(pool))
+	router.GET("/cars", middleware.AuthMiddleware(cfg), handlers.GetAllCarsHandler(pool))
 	router.GET("/cars/:id", handlers.GetCarByIDHandler(pool))
 	router.PUT("/cars/:id", handlers.UpdateCarVolumeHandler(pool))
 	router.DELETE("/cars/:id", handlers.DeleteCarHandler(pool))
+
+	//test route
+	router.GET("/protected", middleware.AuthMiddleware(cfg), handlers.TestProtectedHandler())
 
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to start server: %v", err)
