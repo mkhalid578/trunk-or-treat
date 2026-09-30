@@ -86,13 +86,29 @@ func CreateCarHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 
 func GetAllCarsHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cars, err := repository.GetAllCars(pool)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
 
-		c.JSON(http.StatusOK, cars)
+		year := c.Query("year")
+		if year != "" {
+			yearInt, err := strconv.Atoi(year)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid year"})
+				return
+			}
+			cars, err := repository.GetCarsByYear(pool, yearInt)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, cars)
+		} else {
+			cars, err := repository.GetAllCars(pool)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, cars)
+		}
 	}
 }
 
