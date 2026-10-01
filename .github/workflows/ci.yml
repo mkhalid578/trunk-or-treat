@@ -56,11 +56,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: tests/package-lock.json
 
       - name: Install Node test dependencies
-        run: npm ci
+        run: npm install
         working-directory: tests
 
       - name: Run Go tests
