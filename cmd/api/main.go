@@ -39,7 +39,7 @@ func main() {
 	router.POST("/auth/login", handlers.LoginHandler(pool, cfg))
 
 	router.POST("/cars", middleware.AuthMiddleware(cfg), handlers.CreateCarHandler(pool))
-	router.GET("/cars", middleware.AuthMiddleware(cfg), handlers.GetAllCarsHandler(pool))
+	router.GET("/cars", handlers.GetAllCarsHandler(pool))
 	router.GET("/cars/:id", middleware.AuthMiddleware(cfg), handlers.GetCarByIDHandler(pool))
 	router.PUT("/cars/:id", middleware.AuthMiddleware(cfg), handlers.UpdateCarVolumeHandler(pool))
 	router.DELETE("/cars/:id", middleware.AuthMiddleware(cfg), handlers.DeleteCarHandler(pool))

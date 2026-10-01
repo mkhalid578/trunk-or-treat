@@ -1,5 +1,8 @@
 {
   "type": "module",
+  "scripts": {
+    "test": "node --test cars/*.test.ts"
+  },
   "dependencies": {
     "supertest": "^7.3.0"
   },

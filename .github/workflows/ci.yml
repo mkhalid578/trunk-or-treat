@@ -15,8 +15,27 @@ concurrency:
 
 jobs:
   test:
-    name: Build
+    name: Test, build, and integration test
     runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: car_api
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d car_api"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/car_api?sslmode=disable
+      PORT: "3000"
+      MODE: debug
+      JWT_SECRET: ci-only-test-secret
 
     steps:
       - name: Check out source
@@ -28,11 +47,65 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # - name: Run tests
-      #   run: go test ./...
+      - name: Install Air
+        run: |
+          go install github.com/air-verse/air@v1.67.4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      # - name: Run vet
-      #   run: go vet ./...
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Node test dependencies
+        run: npm install
+        working-directory: tests
+
+      - name: Run Go tests
+        run: go test ./...
+
+      - name: Run Go vet
+        run: go vet ./...
+
+      - name: Apply database migrations
+        run: |
+          for migration in migrations/*.up.sql; do
+            docker exec -i "${{ job.services.postgres.id }}" \
+              psql -U postgres -d car_api -v ON_ERROR_STOP=1 < "$migration"
+          done
 
       - name: Build
         run: go build ./cmd/api
+
+      - name: Start API with Air
+        run: |
+          touch .env
+          nohup air -c .air.toml > /tmp/car-api.log 2>&1 </dev/null &
+          echo $! > /tmp/car-api-air.pid
+
+      - name: Wait for API
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:${PORT}/ >/dev/null; then
+              exit 0
+            fi
+            if ! kill -0 "$(cat /tmp/car-api-air.pid)" 2>/dev/null; then
+              cat /tmp/car-api.log
+              exit 1
+            fi
+            sleep 1
+          done
+          cat /tmp/car-api.log
+          echo "API did not become ready in time"
+          exit 1
+
+      - name: Run API integration tests
+        run: npm test
+        working-directory: tests
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -f /tmp/car-api-air.pid ]; then
+            kill "$(cat /tmp/car-api-air.pid)" 2>/dev/null || true
+          fi

@@ -22,6 +22,15 @@ type CreateCarInput struct {
 	Powertrain string `json:"powertrain" binding:"required"`
 }
 
+type FilterRequest struct {
+	Year       *int    `form:"year"`
+	Make       *string `form:"make"`
+	Model      *string `form:"model"`
+	Trim       *string `form:"trim"`
+	BodyStyle  *string `form:"body_style"`
+	Powertrain *string `form:"powertrain"`
+}
+
 type UpdateCarVolume struct {
 	CargoFullVolumeCuFt   *float64 `json:"cargo_volume_cu_ft"`
 	CargoBehind2ndRowCuFt *float64 `json:"cargo_vol_behind_2nd_row_cu_ft"`
@@ -86,12 +95,42 @@ func CreateCarHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 
 func GetAllCarsHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cars, err := repository.GetAllCars(pool)
+		allowedQueryParams := map[string]bool{
+			"year": true, "make": true, "model": true, "trim": true,
+			"body_style": true, "powertrain": true,
+		}
+		for key := range c.Request.URL.Query() {
+			if !allowedQueryParams[key] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported query parameter: " + key})
+				return
+			}
+		}
+
+		var filter FilterRequest
+		if err := c.ShouldBindQuery(&filter); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if filter.Year != nil && (*filter.Year < 1980 || *filter.Year > 2100) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "year must be between 1980 and 2100"})
+			return
+		}
+
+		repositoryFilter := repository.CarFilter{
+			Year:       filter.Year,
+			Make:       filter.Make,
+			Model:      filter.Model,
+			Trim:       filter.Trim,
+			BodyStyle:  filter.BodyStyle,
+			Powertrain: filter.Powertrain,
+		}
+
+		cars, err := repository.GetCarsByFilter(pool, repositoryFilter)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
 		c.JSON(http.StatusOK, cars)
 	}
 }
