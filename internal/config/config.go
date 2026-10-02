@@ -2,15 +2,17 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Mode        string
-	DatabaseURL string
-	Port        string
-	JWTSecret   string
+	Mode               string
+	DatabaseURL        string
+	Port               string
+	JWTSecret          string
+	CORSAllowedOrigins []string
 }
 
 // Load loads the configuration from environment variables or other sources. caps makes it
@@ -24,10 +26,11 @@ func Load() (*Config, error) {
 	}
 
 	config := &Config{
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		Port:        os.Getenv("PORT"),
-		Mode:        os.Getenv("MODE"),
-		JWTSecret:   os.Getenv("JWT_SECRET"),
+		DatabaseURL:        os.Getenv("DATABASE_URL"),
+		Port:               os.Getenv("PORT"),
+		Mode:               os.Getenv("MODE"),
+		JWTSecret:          os.Getenv("JWT_SECRET"),
+		CORSAllowedOrigins: strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ","),
 	}
 
 	return config, nil
