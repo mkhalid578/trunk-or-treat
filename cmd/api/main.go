@@ -5,9 +5,10 @@ import (
 	"car-api/internal/database"
 	"car-api/internal/handlers"
 	"car-api/internal/middleware"
-	"fmt"
 	"log"
+	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,16 +26,19 @@ func main() {
 
 	router := gin.Default()
 	gin.SetMode(cfg.Mode)
+	router.Use(cors.Default())
 
 	router.SetTrustedProxies([]string{"127.0.0.1"})
 
 	router.GET("/", func(c *gin.Context) {
-		// If the client is 192.168.1.2, use the X-Forwarded-For
-		// header to deduce the original client IP from the trust-
-		// worthy parts of that header.
-		// Otherwise, simply return the direct client IP
-		fmt.Printf("ClientIP: %s\n", c.ClientIP())
+		if err := pool.Ping(c.Request.Context()); err != nil {
+			log.Printf("ping failed: %v", err)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
 	router.POST("/auth/register", handlers.CreateUserHandler(pool))
 	router.POST("/auth/login", handlers.LoginHandler(pool, cfg))
 
@@ -43,9 +47,6 @@ func main() {
 	router.GET("/cars/:id", middleware.AuthMiddleware(cfg), handlers.GetCarByIDHandler(pool))
 	router.PUT("/cars/:id", middleware.AuthMiddleware(cfg), handlers.UpdateCarVolumeHandler(pool))
 	router.DELETE("/cars/:id", middleware.AuthMiddleware(cfg), handlers.DeleteCarHandler(pool))
-
-	//test route
-	router.GET("/protected", middleware.AuthMiddleware(cfg), handlers.TestProtectedHandler())
 
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to start server: %v", err)
