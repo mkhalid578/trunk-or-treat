@@ -7,11 +7,13 @@ let authToken: string;
 
 before(async () => {
   const email = `ci-${Date.now()}@example.com`;
+  const firstName = "ci-test-first-name";
+  const lastName = "ci-test-last-name";
   const password = "ci-test-password";
 
   const registerResponse = await request(BASE_URL)
     .post("/auth/register")
-    .send({ email, password });
+    .send({ email, password, first_name: firstName, last_name: lastName });
   assert.equal(registerResponse.status, 201);
 
   const loginResponse = await request(BASE_URL)

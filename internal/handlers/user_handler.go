@@ -15,8 +15,10 @@ import (
 )
 
 type createUserInput struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required"`
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
 }
 
 type LoginRequest struct {
@@ -25,7 +27,10 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	Token     string `json:"token"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
 }
 
 func CreateUserHandler(pool *pgxpool.Pool) gin.HandlerFunc {
@@ -49,8 +54,10 @@ func CreateUserHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		user := &models.User{
-			Email:    input.Email,
-			Password: string(hash),
+			Email:     input.Email,
+			FirstName: input.FirstName,
+			LastName:  input.LastName,
+			Password:  string(hash),
 		}
 		createdUser, err := repository.CreateUser(pool, user)
 		if err != nil {
@@ -105,9 +112,11 @@ func LoginHandler(pool *pgxpool.Pool, cfg *config.Config) gin.HandlerFunc {
 		// a jwt claim?
 
 		claims := jwt.MapClaims{
-			"user_id": user.ID,
-			"email":   user.Email,
-			"exp":     time.Now().Add(time.Hour * 24).Unix(), // convert time to unix timestamp after 1970
+			"user_id":    user.ID,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"exp":        time.Now().Add(time.Hour * 24).Unix(), // convert time to unix timestamp after 1970
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -118,7 +127,12 @@ func LoginHandler(pool *pgxpool.Pool, cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, LoginResponse{Token: tokenString})
+		c.JSON(http.StatusOK, LoginResponse{
+			Token:     tokenString,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+		})
 	}
 }
 
