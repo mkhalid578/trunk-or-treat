@@ -25,4 +25,11 @@ does not delete existing data.
 
 The scraper requires a working Firecrawl API key and aborts without changing the
 database if Firecrawl fails, the catalog is empty, or any record is invalid or
-outside the current/next-year range.
+outside the current/next-year range. Identical duplicate model/year/trim records
+are collapsed; duplicates with conflicting body styles or powertrains abort the
+import.
+
+The migration `000004_remove_legacy_car_identity` removes the older unique
+make/model/year index or constraint. That older rule prevents storing multiple
+trims for a model year; the catalog identity index instead permits one row per
+make/model/year/trim.

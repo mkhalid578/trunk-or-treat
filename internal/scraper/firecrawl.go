@@ -158,7 +158,7 @@ func ValidateToyotaCatalog(catalog []ToyotaCar) ([]models.Car, error) {
 	}
 
 	cars := make([]models.Car, 0, len(catalog))
-	identities := make(map[string]struct{}, len(catalog))
+	identities := make(map[string]models.Car, len(catalog))
 	currentYear := time.Now().Year()
 
 	for i, entry := range catalog {
@@ -180,19 +180,23 @@ func ValidateToyotaCatalog(catalog []ToyotaCar) ([]models.Car, error) {
 		identity := strings.ToLower(entry.Model) + "\x00" +
 			strings.ToLower(entry.Trim) + "\x00" +
 			fmt.Sprint(entry.ModelYear)
-		if _, exists := identities[identity]; exists {
-			return nil, fmt.Errorf("Toyota catalog has duplicate model/trim record %q %q (%d)", entry.Model, entry.Trim, entry.ModelYear)
+		if existing, exists := identities[identity]; exists {
+			if existing.BodyStyle != entry.BodyStyle || existing.Powertrain != entry.Powertrain {
+				return nil, fmt.Errorf("Toyota catalog has conflicting duplicate model/trim record %q %q (%d)", entry.Model, entry.Trim, entry.ModelYear)
+			}
+			continue
 		}
-		identities[identity] = struct{}{}
 
-		cars = append(cars, models.Car{
+		car := models.Car{
 			Make:       "Toyota",
 			Model:      entry.Model,
 			Year:       entry.ModelYear,
 			Trim:       entry.Trim,
 			BodyStyle:  entry.BodyStyle,
 			Powertrain: entry.Powertrain,
-		})
+		}
+		identities[identity] = car
+		cars = append(cars, car)
 	}
 
 	return cars, nil

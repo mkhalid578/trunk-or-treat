@@ -44,6 +44,20 @@ func TestValidateToyotaCatalogAllowsCurrentAndNextModelYears(t *testing.T) {
 	}
 }
 
+func TestValidateToyotaCatalogDeduplicatesIdenticalRecords(t *testing.T) {
+	currentYear := time.Now().Year()
+	cars, err := ValidateToyotaCatalog([]ToyotaCar{
+		{Model: "RAV4", ModelYear: currentYear, Trim: "Hybrid EV Available", BodyStyle: "suv", Powertrain: "hybrid"},
+		{Model: " RAV4 ", ModelYear: currentYear, Trim: " Hybrid EV Available ", BodyStyle: "suv", Powertrain: "hybrid"},
+	})
+	if err != nil {
+		t.Fatalf("ValidateToyotaCatalog returned error: %v", err)
+	}
+	if len(cars) != 1 {
+		t.Fatalf("got %d cars, want 1 deduplicated car", len(cars))
+	}
+}
+
 func TestValidateToyotaCatalogRejectsInvalidRecords(t *testing.T) {
 	currentYear := time.Now().Year()
 	tests := []struct {
@@ -57,10 +71,10 @@ func TestValidateToyotaCatalogRejectsInvalidRecords(t *testing.T) {
 			},
 		},
 		{
-			name: "duplicate model trim",
+			name: "conflicting duplicate model trim",
 			catalog: []ToyotaCar{
 				{Model: "Camry", ModelYear: currentYear, Trim: "LE", BodyStyle: "sedan", Powertrain: "gas"},
-				{Model: " camry ", ModelYear: currentYear, Trim: " le ", BodyStyle: "sedan", Powertrain: "gas"},
+				{Model: " camry ", ModelYear: currentYear, Trim: " le ", BodyStyle: "sedan", Powertrain: "hybrid"},
 			},
 		},
 		{
